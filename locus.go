@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -53,14 +52,9 @@ func main() {
 	}
 	defer resp.Body.Close()
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("'ReadAll' returned an error: %s", err)
-	}
-
 	var location Location
-	if err = json.Unmarshal(body, &location); err != nil {
-		log.Fatalf("'Unmarshal' returned an error: %v", err)
+	if err = json.NewDecoder(resp.Body).Decode(&location); err != nil {
+		log.Fatalf("'Decode' returned an error: %v", err)
 	} else {
 		fmt.Printf("\n%v", location)
 	}
