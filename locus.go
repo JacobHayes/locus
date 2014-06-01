@@ -11,7 +11,7 @@ import (
 )
 
 type Location struct {
-	StatusCode   string `json: "statusCode"`
+	StatusCode    string `json: "statusCode"`
 	StatusMessage string `json: "statusMessage"`
 	IpAddress     string `json: "ipAddress"`
 	CountryCode   string `json: "countryCode"`
@@ -24,38 +24,32 @@ type Location struct {
 	TimeZone      string `json: "timeZone"`
 }
 
+func check(err error) {
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("Locus: GeoIP Lookup\n")
 
 	fmt.Printf("Enter your ipinfodb API key: ")
-	key, err := reader.ReadString('\n')
+	key, err := reader.ReadString('\n'); check(err)
 	key = strings.Trim(key, "\n")
-	if err != nil {
-		fmt.Printf("\nKey failed...\n")
-	}
 
 	fmt.Printf("Enter an IP Address to lookup: ")
 	ip, err := reader.ReadString('\n')
-	ip = strings.Trim(ip, "\n")
-	if err != nil {
-		fmt.Printf("\nIP failed...\n\n")
-	}
+	ip = strings.Trim(ip, "\n"); check(err)
 
 	request_url := fmt.Sprintf("http://api.ipinfodb.com/v3/ip-city/?key=%s&ip=%s&format=json", key, ip)
 
 	resp, err := http.Get(request_url)
-	if err != nil {
-		resp.Body.Close()
-		log.Fatalf("'Get' returned error: %s", err)
-	}
-	defer resp.Body.Close()
+	defer resp.Body.Close(); check(err)
 
 	var location Location
-	if err = json.NewDecoder(resp.Body).Decode(&location); err != nil {
-		log.Fatalf("'Decode' returned an error: %v", err)
-	} else {
-		fmt.Printf("\n%v", location)
-	}
+	err = json.NewDecoder(resp.Body).Decode(&location); check(err)
+
+	fmt.Printf("\n%v\n", location)
 }
