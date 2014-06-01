@@ -5,26 +5,27 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 )
 
-func main() {
-	type Location struct {
-		StatusCode    string
-		StatusMessage string
-		IpAddress     string
-		CountryCode   string
-		CountryName   string
-		RegionName    string
-		CityName      string
-		ZipCode       string
-		Latitude      string
-		Longitude     string
-		TimeZone      string
-	}
+type Location struct {
+	StatusCode   string `json: "statusCode"`
+	StatusMessage string `json: "statusMessage"`
+	IpAddress     string `json: "ipAddress"`
+	CountryCode   string `json: "countryCode"`
+	CountryName   string `json: "countryName"`
+	RegionName    string `json: "regionName"`
+	CityName      string `json: "cityName"`
+	ZipCode       string `json: "zipCode"`
+	Latitude      string `json: "latitude"`
+	Longitude     string `json: "longitude"`
+	TimeZone      string `json: "timeZone"`
+}
 
+func main() {
 	reader := bufio.NewReader(os.Stdin)
 
 	fmt.Println("Locus: GeoIP Lookup\n")
@@ -47,30 +48,20 @@ func main() {
 
 	resp, err := http.Get(request_url)
 	if err != nil {
-		fmt.Printf("'Get' returned error: %s", err)
+		resp.Body.Close()
+		log.Fatalf("'Get' returned error: %s", err)
 	}
 	defer resp.Body.Close()
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("'ReadAll' returned an error: %s", err)
+		log.Fatalf("'ReadAll' returned an error: %s", err)
 	}
 
-	fmt.Printf("\nCity Location JSON: %s\n\n", body)
-
-	var location_struct []Location
-	err = json.Unmarshal(body, &location_struct)
-	if err != nil {
-		fmt.Printf("'json.Unmarshal' returned an error: %s\n\n", err)
+	var location Location
+	if err = json.Unmarshal(body, &location); err != nil {
+		log.Fatalf("'Unmarshal' returned an error: %v", err)
 	} else {
-		fmt.Printf("City Location Struct: %v\n\n", location_struct)
-	}
-
-	var location_interface interface{}
-	err = json.Unmarshal(body, &location_interface)
-	if err != nil {
-		fmt.Printf("'json.Unmarshal' returned an error: %s\n\n", err)
-	} else {
-		fmt.Printf("City Location Interface: %v\n", location_interface)
+		fmt.Printf("\n%v", location)
 	}
 }
