@@ -7,7 +7,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 )
 
 type Location struct {
@@ -31,25 +30,39 @@ func check(err error) {
 }
 
 func main() {
-	reader := bufio.NewReader(os.Stdin)
-
 	fmt.Println("Locus: GeoIP Lookup\n")
 
-	fmt.Printf("Enter your ipinfodb API key: ")
-	key, err := reader.ReadString('\n'); check(err)
-	key = strings.Trim(key, "\n")
+	api_file, err := os.Open("api")
+	defer api_file.Close()
+	check(err)
+	api_scanner := bufio.NewScanner(api_file)
+	check(err)
+	api_scanner.Scan()
+	if err = api_scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	api_key := api_scanner.Text()
 
-	fmt.Printf("Enter an IP Address to lookup: ")
-	ip, err := reader.ReadString('\n')
-	ip = strings.Trim(ip, "\n"); check(err)
+	ip_file, err := os.Open("ips")
+	defer ip_file.Close()
+	check(err)
+	ip_scanner := bufio.NewScanner(ip_file)
+	check(err)
+	ip_scanner.Scan()
+	if err = ip_scanner.Err(); err != nil {
+		log.Fatal(err)
+	}
+	ip := ip_scanner.Text()
 
-	request_url := fmt.Sprintf("http://api.ipinfodb.com/v3/ip-city/?key=%s&ip=%s&format=json", key, ip)
+	request_url := fmt.Sprintf("http://api.ipinfodb.com/v3/ip-city/?key=%s&ip=%s&format=json", api_key, ip)
 
 	resp, err := http.Get(request_url)
-	defer resp.Body.Close(); check(err)
+	defer resp.Body.Close()
+	check(err)
 
 	var location Location
-	err = json.NewDecoder(resp.Body).Decode(&location); check(err)
+	err = json.NewDecoder(resp.Body).Decode(&location)
+	check(err)
 
 	fmt.Printf("\n%v\n", location)
 }
