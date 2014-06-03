@@ -29,30 +29,36 @@ func check(err error) {
 	}
 }
 
+func open(filename string) *os.File {
+  file, err := os.Open(filename)
+  check(err)
+
+  return file
+}
+
+func scanner(file *os.File) *bufio.Scanner {
+  return bufio.NewScanner(file)
+}
+
+func read_line(scanner *bufio.Scanner) string {
+	check(scanner.Err())
+	scanner.Scan()
+	line := scanner.Text()
+	check(scanner.Err())
+
+	return line
+}
+
 func main() {
-	fmt.Println("Locus: GeoIP Lookup\n")
+	fmt.Println("Locus: GeoIP Lookup")
 
-	api_file, err := os.Open("api")
+	api_file := open("api")
 	defer api_file.Close()
-	check(err)
-	api_scanner := bufio.NewScanner(api_file)
-	check(err)
-	api_scanner.Scan()
-	if err = api_scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-	api_key := api_scanner.Text()
+	api_key := read_line(scanner(api_file))
 
-	ip_file, err := os.Open("ips")
+	ip_file := open("ips")
 	defer ip_file.Close()
-	check(err)
-	ip_scanner := bufio.NewScanner(ip_file)
-	check(err)
-	ip_scanner.Scan()
-	if err = ip_scanner.Err(); err != nil {
-		log.Fatal(err)
-	}
-	ip := ip_scanner.Text()
+	ip := read_line(scanner(ip_file))
 
 	request_url := fmt.Sprintf("http://api.ipinfodb.com/v3/ip-city/?key=%s&ip=%s&format=json", api_key, ip)
 
