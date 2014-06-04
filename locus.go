@@ -1,13 +1,14 @@
-package main
+package locus
 
 import (
-	"bufio"
 	"encoding/json"
-	"fmt"
-	"log"
+	"io/ioutil"
 	"net/http"
-	"os"
+	"strings"
 )
+
+const cityUrl string = `http://api.ipinfodb.com/v3/ip-city/`
+const countryUrl string = `http://api.ipinfodb.com/v3/ip-country/`
 
 type Location struct {
 	StatusCode    string `json: "statusCode"`
@@ -23,52 +24,55 @@ type Location struct {
 	TimeZone      string `json: "timeZone"`
 }
 
-func check(err error) {
+func locationJson(url string) (*[]byte, error) {
+	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-}
-
-func open(filename string) *os.File {
-  file, err := os.Open(filename)
-  check(err)
-
-  return file
-}
-
-func scanner(file *os.File) *bufio.Scanner {
-  return bufio.NewScanner(file)
-}
-
-func read_line(scanner *bufio.Scanner) string {
-	check(scanner.Err())
-	scanner.Scan()
-	line := scanner.Text()
-	check(scanner.Err())
-
-	return line
-}
-
-func main() {
-	fmt.Println("Locus: GeoIP Lookup")
-
-	api_file := open("api")
-	defer api_file.Close()
-	api_key := read_line(scanner(api_file))
-
-	ip_file := open("ips")
-	defer ip_file.Close()
-	ip := read_line(scanner(ip_file))
-
-	request_url := fmt.Sprintf("http://api.ipinfodb.com/v3/ip-city/?key=%s&ip=%s&format=json", api_key, ip)
-
-	resp, err := http.Get(request_url)
 	defer resp.Body.Close()
-	check(err)
 
-	var location Location
-	err = json.NewDecoder(resp.Body).Decode(&location)
-	check(err)
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
 
-	fmt.Printf("\n%v\n", location)
+	return &body, nil
+}
+
+func location(url string) (*Location, error) {
+	var location *Location
+
+	raw_json, err := locationJson(url)
+	if err != nil {
+		return nil, err
+	}
+
+	err = json.Unmarshal(*raw_json, location)
+	if err != nil {
+		return nil, err
+	}
+
+	return location, nil
+}
+
+func requestUrl(base_url string, key string, ip string) string {
+	return strings.Join([]string{base_url, `?key=`, key, `&ip=`, ip, `&format=json`}, ``)
+}
+
+// Public API
+
+func CityLocationJson(key string, ip string) (*[]byte, error) {
+	return locationJson(requestUrl(cityUrl, key, ip))
+}
+
+func CountryLocationJson(key string, ip string) (*[]byte, error) {
+	return locationJson(requestUrl(countryUrl, key, ip))
+}
+
+func CityLocation(key string, ip string) (*Location, error) {
+	return location(requestUrl(cityUrl, key, ip))
+}
+
+func CountryLocation(key string, ip string) (*Location, error) {
+	return location(requestUrl(countryUrl, key, ip))
 }
