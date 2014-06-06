@@ -24,7 +24,7 @@ type Location struct {
 	TimeZone      string `json: "timeZone"`
 }
 
-func locationJson(url string) (*[]byte, error) {
+func locationJson(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -36,18 +36,18 @@ func locationJson(url string) (*[]byte, error) {
 		return nil, err
 	}
 
-	return &body, nil
+	return body, nil
 }
 
 func location(url string) (*Location, error) {
-	var location *Location
+	location := &Location{}
 
 	raw_json, err := locationJson(url)
 	if err != nil {
 		return nil, err
 	}
 
-	err = json.Unmarshal(*raw_json, location)
+	err = json.Unmarshal(raw_json, location)
 	if err != nil {
 		return nil, err
 	}
@@ -55,24 +55,40 @@ func location(url string) (*Location, error) {
 	return location, nil
 }
 
-func requestUrl(base_url string, key string, ip string) string {
-	return strings.Join([]string{base_url, `?key=`, key, `&ip=`, ip, `&format=json`}, ``)
+func requestUrl(ip string, precision string, key string) string {
+	baseUrl := countryUrl
+	if strings.ToLower(precision) == "city" {
+		baseUrl = cityUrl
+	}
+
+	return strings.Join([]string{baseUrl, `?format=json`, `&ip=`, ip, `&key=`, key}, ``)
 }
 
 // Public API
 
-func CityLocationJson(key string, ip string) (*[]byte, error) {
-	return locationJson(requestUrl(cityUrl, key, ip))
+func LookupLocationJson(ip string, precision string, key string) (string, error) {
+	location, err := locationJson(requestUrl(ip, precision, key))
+	return string(location[:]), err
 }
 
-func CountryLocationJson(key string, ip string) (*[]byte, error) {
-	return locationJson(requestUrl(countryUrl, key, ip))
+func LookupLocation(ip string, precision string, key string) (*Location, error) {
+	return location(requestUrl(ip, precision, key))
 }
 
-func CityLocation(key string, ip string) (*Location, error) {
-	return location(requestUrl(cityUrl, key, ip))
+func BulkLookupLocationJSON(ips []string, precision string, key string) []string {
+	var locations [len(ips)-1]string
+	for ip := range ips {
+		locations[ip] = LookupLocationJson(ip, precision, key)
+	}
+
+	return locations
 }
 
-func CountryLocation(key string, ip string) (*Location, error) {
-	return location(requestUrl(countryUrl, key, ip))
+func BulkLookupLocation(ips []string, precision string, key string) []*Location {
+	var locations [len(ips) - 1]*Location
+	for ip := range ips {
+		locations[ip] = LookupLocation(ip, precision, key)
+	}
+
+	return locations
 }
