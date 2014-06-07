@@ -75,20 +75,28 @@ func LookupLocation(ip string, precision string, key string) (*Location, error) 
 	return location(requestUrl(ip, precision, key))
 }
 
-func BulkLookupLocationJSON(ips []string, precision string, key string) []string {
-	var locations [len(ips)-1]string
-	for ip := range ips {
-		locations[ip] = LookupLocationJson(ip, precision, key)
+func BulkLookupLocationJSON(ips []string, precision string, key string) ([]string, error) {
+	locations := make([]string, len(ips)-1)
+	var err error
+	for i, ip := range ips {
+		locations[i], err = LookupLocationJson(ip, precision, key)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return locations
+	return locations, nil
 }
 
-func BulkLookupLocation(ips []string, precision string, key string) []*Location {
-	var locations [len(ips) - 1]*Location
-	for ip := range ips {
-		locations[ip] = LookupLocation(ip, precision, key)
+func BulkLookupLocation(ips []string, precision string, key string) ([]*Location, error) {
+	locations := make([]*Location, len(ips)-1)
+	var err error
+	for i, ip := range ips {
+		locations[i], err = LookupLocation(ip, precision, key)
+		if err != nil {
+			return nil, err
+		}
 	}
 
-	return locations
+	return locations, nil
 }
