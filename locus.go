@@ -76,7 +76,7 @@ func LookupLocation(ip string, precision string, key string) (*Location, error) 
 }
 
 func BulkLookupLocationJSON(ips []string, precision string, key string) ([]string, error) {
-	locations := make([]string, len(ips)-1)
+	locations := make([]string, len(ips))
 	var err error
 	for i, ip := range ips {
 		locations[i], err = LookupLocationJson(ip, precision, key)
@@ -89,7 +89,7 @@ func BulkLookupLocationJSON(ips []string, precision string, key string) ([]strin
 }
 
 func BulkLookupLocation(ips []string, precision string, key string) ([]*Location, error) {
-	locations := make([]*Location, len(ips)-1)
+	locations := make([]*Location, len(ips))
 	var err error
 	for i, ip := range ips {
 		locations[i], err = LookupLocation(ip, precision, key)
