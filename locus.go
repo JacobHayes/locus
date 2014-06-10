@@ -1,9 +1,12 @@
 package locus
 
 import (
+	"bufio"
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
+	"net/url"
+	"os"
 	"strings"
 )
 
@@ -24,72 +27,55 @@ type Location struct {
 	TimeZone      string `json: "timeZone"`
 }
 
-func locationJson(url string) ([]byte, error) {
-	resp, err := http.Get(url)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	return body, nil
-}
-
-func location(url string) (*Location, error) {
-	location := &Location{}
-
-	raw_json, err := locationJson(url)
-	if err != nil {
-		return nil, err
-	}
-
-	err = json.Unmarshal(raw_json, location)
-	if err != nil {
-		return nil, err
-	}
-
-	return location, nil
-}
-
-func requestUrl(ip string, precision string, key string) string {
+func requestUrl(ip string, precision string, key string) (string, error) {
 	baseUrl := countryUrl
 	if strings.ToLower(precision) == "city" {
 		baseUrl = cityUrl
 	}
 
-	return strings.Join([]string{baseUrl, `?format=json`, `&ip=`, ip, `&key=`, key}, ``)
-}
-
-// Public API
-
-func LookupLocationJson(ip string, precision string, key string) (string, error) {
-	location, err := locationJson(requestUrl(ip, precision, key))
-	return string(location[:]), err
-}
-
-func LookupLocation(ip string, precision string, key string) (*Location, error) {
-	return location(requestUrl(ip, precision, key))
-}
-
-func BulkLookupLocationJSON(ips []string, precision string, key string) ([]string, error) {
-	locations := make([]string, len(ips))
-	var err error
-	for i, ip := range ips {
-		locations[i], err = LookupLocationJson(ip, precision, key)
-		if err != nil {
-			return nil, err
-		}
+	var request *url.URL
+	request, err := url.Parse(baseUrl)
+	if err != nil {
+		return ``, err
 	}
 
-	return locations, nil
+	params := url.Values{}
+	params.Set(`ip`, ip)
+	params.Set(`key`, key)
+	params.Set(`format`, `json`)
+	request.RawQuery = params.Encode()
+
+	return request.String(), nil
 }
 
-func BulkLookupLocation(ips []string, precision string, key string) ([]*Location, error) {
-	locations := make([]*Location, len(ips))
+func lookupLocation(ip string, precision string, key string) (Location, error) {
+	location := Location{}
+	request, err := requestUrl(ip, precision, key)
+	if err != nil {
+		return Location{}, err
+	}
+
+	resp, err := http.Get(request)
+	if err != nil {
+		return Location{}, err
+	}
+	defer resp.Body.Close()
+
+	raw_json, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return Location{}, err
+	}
+
+	err = json.Unmarshal(raw_json, &location)
+	if err != nil {
+		return Location{}, err
+	}
+
+	return location, nil
+}
+
+func lookupLocations(ips []string, precision string, key string) ([]Location, error) {
+	locations := make([]Location, len(ips))
 	var err error
 	for i, ip := range ips {
 		locations[i], err = LookupLocation(ip, precision, key)
@@ -99,4 +85,37 @@ func BulkLookupLocation(ips []string, precision string, key string) ([]*Location
 	}
 
 	return locations, nil
+}
+
+func lookupLocationsFile(filename string, precision string, key string) ([]Location, error) {
+	file, err := os.Open(filename)
+	if err != nil {
+		return nil, err
+	}
+	defer file.Close()
+
+	ips := make([]string, 0)
+	for scanner := bufio.NewScanner(file); scanner.Scan(); {
+		if scanner.Err() != nil {
+			return nil, scanner.Err()
+		}
+
+		ips = append(ips, scanner.Text())
+	}
+
+	return LookupLocations(ips, precision, key)
+}
+
+// Public API
+
+func LookupLocation(ip string, precision string, key string) (Location, error) {
+	return lookupLocation(ip, precision, key)
+}
+
+func LookupLocations(ips []string, precision string, key string) ([]Location, error) {
+	return lookupLocations(ips, precision, key)
+}
+
+func LookupLocationsFile(filename string, precision string, key string) ([]Location, error) {
+	return lookupLocationsFile(filename, precision, key)
 }
