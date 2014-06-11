@@ -13,6 +13,9 @@ import (
 const cityUrl string = `http://api.ipinfodb.com/v3/ip-city/`
 const countryUrl string = `http://api.ipinfodb.com/v3/ip-country/`
 
+// Location contains fields common to an IP's geolocation.
+// When using country precision, only StatusCode, StatusMessage, IpAddress, CountryCode, and CountryName are present.
+// When using city precision, all fields are present.
 type Location struct {
 	StatusCode    string `json: "statusCode"`
 	StatusMessage string `json: "statusMessage"`
@@ -27,6 +30,8 @@ type Location struct {
 	TimeZone      string `json: "timeZone"`
 }
 
+// requestUrl creates the URL used for a lookup request.
+// It returns a string containing a valid URL and any encountered error.
 func requestUrl(ip string, precision string, key string) (string, error) {
 	baseUrl := countryUrl
 	if strings.ToLower(precision) == "city" {
@@ -48,6 +53,7 @@ func requestUrl(ip string, precision string, key string) (string, error) {
 	return request.String(), nil
 }
 
+// See the documentation for LookupLocation.
 func lookupLocation(ip string, precision string, key string) (Location, error) {
 	location := Location{}
 	request, err := requestUrl(ip, precision, key)
@@ -74,6 +80,7 @@ func lookupLocation(ip string, precision string, key string) (Location, error) {
 	return location, nil
 }
 
+// See the documentation for LookupLocations.
 func lookupLocations(ips []string, precision string, key string) ([]Location, error) {
 	locations := make([]Location, len(ips))
 	var err error
@@ -87,6 +94,7 @@ func lookupLocations(ips []string, precision string, key string) ([]Location, er
 	return locations, nil
 }
 
+// See the documentation for LookupLocationsFile.
 func lookupLocationsFile(filename string, precision string, key string) ([]Location, error) {
 	file, err := os.Open(filename)
 	if err != nil {
@@ -108,14 +116,21 @@ func lookupLocationsFile(filename string, precision string, key string) ([]Locat
 
 // Public API
 
+// LookupLocation gets the geolocation of the provided IP with the given precision.
+// It returns a Location struct containing geolocation data and any encountered error.
 func LookupLocation(ip string, precision string, key string) (Location, error) {
 	return lookupLocation(ip, precision, key)
 }
 
+// LookupLocations gets the geolocation of the provided IPs with the given precision.
+// It returns a slice of Location structs containing geolocation data and any encountered error.
 func LookupLocations(ips []string, precision string, key string) ([]Location, error) {
 	return lookupLocations(ips, precision, key)
 }
 
+// LookupLocationsFile gets the geolocation of the IPs in the provided file with the given precision.
+// The file format expects a single IP address per line.
+// It returns a slice of Location structs containing geolocation data and any encountered error.
 func LookupLocationsFile(filename string, precision string, key string) ([]Location, error) {
 	return lookupLocationsFile(filename, precision, key)
 }
