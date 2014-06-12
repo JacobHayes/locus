@@ -30,6 +30,25 @@ type Location struct {
 	TimeZone      string `json: "timeZone"`
 }
 
+// LookupLocation gets the geolocation of the provided IP with the given precision.
+// It returns a Location struct containing geolocation data and any encountered error.
+func LookupLocation(ip string, precision string, key string) (Location, error) {
+	return lookupLocation(ip, precision, key)
+}
+
+// LookupLocations gets the geolocation of the provided IPs with the given precision.
+// It returns a slice of Location structs containing geolocation data and any encountered error.
+func LookupLocations(ips []string, precision string, key string) ([]Location, error) {
+	return lookupLocations(ips, precision, key)
+}
+
+// LookupLocationsFile gets the geolocation of the IPs in the provided file with the given precision.
+// The file format expects a single IP address per line.
+// It returns a slice of Location structs containing geolocation data and any encountered error.
+func LookupLocationsFile(filename string, precision string, key string) ([]Location, error) {
+	return lookupLocationsFile(filename, precision, key)
+}
+
 // requestUrl creates the URL used for a lookup request.
 // It returns a string containing a valid URL and any encountered error.
 func requestUrl(ip string, precision string, key string) (string, error) {
@@ -112,25 +131,4 @@ func lookupLocationsFile(filename string, precision string, key string) ([]Locat
 	}
 
 	return LookupLocations(ips, precision, key)
-}
-
-// Public API
-
-// LookupLocation gets the geolocation of the provided IP with the given precision.
-// It returns a Location struct containing geolocation data and any encountered error.
-func LookupLocation(ip string, precision string, key string) (Location, error) {
-	return lookupLocation(ip, precision, key)
-}
-
-// LookupLocations gets the geolocation of the provided IPs with the given precision.
-// It returns a slice of Location structs containing geolocation data and any encountered error.
-func LookupLocations(ips []string, precision string, key string) ([]Location, error) {
-	return lookupLocations(ips, precision, key)
-}
-
-// LookupLocationsFile gets the geolocation of the IPs in the provided file with the given precision.
-// The file format expects a single IP address per line.
-// It returns a slice of Location structs containing geolocation data and any encountered error.
-func LookupLocationsFile(filename string, precision string, key string) ([]Location, error) {
-	return lookupLocationsFile(filename, precision, key)
 }
