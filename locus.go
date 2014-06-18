@@ -17,17 +17,17 @@ const countryUrl string = `http://api.ipinfodb.com/v3/ip-country/`
 // When using country precision, only StatusCode, StatusMessage, IpAddress, CountryCode, and CountryName are present.
 // When using city precision, all fields are present.
 type Location struct {
-	StatusCode    string `json:"statusCode"`
-	StatusMessage string `json:"statusMessage"`
-	IpAddress     string `json:"ipAddress"`
+	CityName      string `json:"cityName"`
 	CountryCode   string `json:"countryCode"`
 	CountryName   string `json:"countryName"`
-	RegionName    string `json:"regionName"`
-	CityName      string `json:"cityName"`
-	ZipCode       string `json:"zipCode"`
+	IpAddress     string `json:"ipAddress"`
 	Latitude      string `json:"latitude"`
 	Longitude     string `json:"longitude"`
+	RegionName    string `json:"regionName"`
+	StatusCode    string `json:"statusCode"`
+	StatusMessage string `json:"statusMessage"`
 	TimeZone      string `json:"timeZone"`
+	ZipCode       string `json:"zipCode"`
 }
 
 // LookupLocation gets the geolocation of the provided IP with the given precision.
