@@ -49,6 +49,21 @@ func LookupLocationsFile(filename string, precision string, key string) ([]Locat
 	return lookupLocationsFile(filename, precision, key)
 }
 
+func getJSON(u string) ([]byte, error) {
+	resp, err := http.Get(u)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	raw_json, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	return raw_json, nil
+}
+
 // requestUrl creates the URL used for a lookup request.
 // It returns a string containing a valid URL and any encountered error.
 func requestUrl(ip string, precision string, key string) (string, error) {
@@ -80,13 +95,7 @@ func lookupLocation(ip string, precision string, key string) (Location, error) {
 		return Location{}, err
 	}
 
-	resp, err := http.Get(request)
-	if err != nil {
-		return Location{}, err
-	}
-	defer resp.Body.Close()
-
-	raw_json, err := ioutil.ReadAll(resp.Body)
+	raw_json, err := getJSON(request)
 	if err != nil {
 		return Location{}, err
 	}
